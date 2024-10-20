@@ -1,0 +1,85 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: pinghosts.xmp.io
+spec:
+  group: xmp.io
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                host:
+                  type: string
+  scope: Namespaced
+  names:
+    plural: pinghosts
+    singular: pinghost
+    kind: PingHost
+    shortNames:
+    - ph
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: api-access-sa
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: api-access-role
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["*"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["*"]
+- apiGroups: ["xmp.io"]
+  resources: ["pinghosts"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: api-access-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: api-access-role
+subjects:
+- kind: ServiceAccount
+  name: api-access-sa
+  namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pinghost-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pinghost-controller
+  template:
+    metadata:
+      labels:
+        app: pinghost-controller
+    spec:
+      serviceAccountName: api-access-sa
+      containers:
+      - name: pinghost-controller
+        image: docker.io/cgrillet821/pinghost-controller:latest
+        imagePullPolicy: Always
+        env:
+        - name: KUBERNETES_SERVICE_HOST
+          value: "kubernetes.default.svc"
+        - name: KUBERNETES_SERVICE_PORT
+          value: "443"

@@ -1,0 +1,21 @@
+apiVersion: xmp.io/v1
+kind: PingHost
+metadata:
+  name: google
+spec:
+  host: "8.8.8.8"
+---
+apiVersion: xmp.io/v1
+kind: PingHost
+metadata:
+  name: cloudflare
+spec:
+  host: "1.1.1.1"
+---
+apiVersion: xmp.io/v1
+kind: PingHost
+metadata:
+  name: cloud9
+spec:
+  host: "9.9.9.9"
+---
